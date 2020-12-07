@@ -35,3 +35,8 @@ int main() {
   printf("--Thread principal terminou\n");
   pthread_exit(NULL);
 }
+
+// Nesse programa fica bem perceptível que a ordem de execução das threads é aleatória
+// É necessário alocar espaço pro argumento de cada thread porque a passagem é feita por referência
+// Então é necessária uma variável com valor constante
+// Se tivéssemos passado a variável thread como parâmetro, a função poderia printar o valor dela depois de já ter sido alterada pela thread principal

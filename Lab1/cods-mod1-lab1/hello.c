@@ -33,3 +33,8 @@ int main(void) {
 
   pthread_exit(NULL);
 }
+
+// As threads criadas são executadas concorrentemente com a thread principal
+// Elas printam na tela no momento que são executadas pelo sistema operacinal, independentemente do que está acontecendo na thread principal
+// Por isso as linhas sempre variam
+// Há diferença na ordem de execução das threads pois, por mais que elas sejam criadas sequencialmente, ela é definida pelo sistema operacional

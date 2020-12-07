@@ -55,3 +55,6 @@ int main() {
   printf("--Thread principal terminou\n");
   pthread_exit(NULL);
 }
+
+// A diferença é que a thread principal espera todas as outras terminarem para continuar sua execução
+// Isso fica claro pois agora o print "Thread principal terminou" fica sempre no final

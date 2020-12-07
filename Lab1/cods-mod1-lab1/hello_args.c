@@ -48,3 +48,6 @@ int main() {
   printf("--Thread principal terminou\n");
   pthread_exit(NULL);
 }
+
+// O programa funciona como esperado. Pois cada argumento passado é alocado e desalocado individualmente
+// As threads são executadas em ordens diferentes mas todas com o argumento que foi devidamente passado
