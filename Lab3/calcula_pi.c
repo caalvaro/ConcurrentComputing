@@ -11,8 +11,6 @@ int number_of_threads;
 /* função que será executada pelas threads */
 void *task(void *arg);
 double task_sequential();
-void *task_stl(void *arg);
-double task_sequential_stl();
 pthread_t *thread_alloc();
 
 int main(int argc, char const *argv[]) {
