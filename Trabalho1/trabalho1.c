@@ -1,69 +1,76 @@
-/* Concurrent implementations of Matrix-Vector Multiplication */
+/* Disciplina: Computacao Concorrente */
+/* Prof.: Silvana Rossetto */
+/* Módulo 1 - Trabalho 1 */
+/* Alunos: Álvaro de Carvalho Alves e Carla Moreno Barbosa */
+/* Codigo: Implementação concorrente do Jogo do maior */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
 #include "timer.h"
 
-int *matrix1;
-char *result;
+/* struct para armazenar a entrada dos jogadores em cada rodada */
+typedef struct {
+  long int player1;
+  long int player2;
+} round_t;
+
+/* struct para armazerar o resultado de cada jogo */
+typedef struct {
+  long int player1_score;
+  long int player2_score;
+} result_t;
+
+/* struct para armazenar cada jogo */
+typedef struct {
+  round_t *rounds;
+  result_t *game_result;
+  int winner;
+} game_t;
+
+game_t *games; /* variável global para armazenar a estrutura de dados que controla todo jogo */
+
 int number_of_threads;
-int matrix_dimension;
+long int number_of_games;
+long int game_size;
 
-float *create_matrix();
-void populate_matrix(float *matrix);
-void print_matrix(float *matrix);
-
-void *task(void *arg) {
-  int thread_id = *((int *) arg), i, j, k;
-  int temp;
-
-  /*printf("Thread %d\n", thread_id);*/
-
-  /* faz a multiplicação da matriz apenas nas linhas que ela é responsável */
-  for (i = thread_id; i < matrix_dimension; i += number_of_threads) {
-    for (j = 0; j < matrix_dimension; j++) {
-      temp = 0;
-      for (k = 0; k < matrix_dimension; k++) {
-        temp += matrix1[i * matrix_dimension + k] * matrix2[k * matrix_dimension + j];
-      }
-      result[i * matrix_dimension + j] = temp;
-    }
-  }
-
-  pthread_exit(NULL);
-}
+void create_games_concurrent(); /* controla a alocação e preenchimento da estrutura de dados do jogo */
+void *result_round_alloc(void *arg); /* função executada pelas threads que alocam e preenchem a estrutura de dados do jogo */
+void *game_process(void *arg); /* função executada pelas threads que processam a estrutura de dados do jogo e identificam os vencedores */
 
 int main(int argc, char const *argv[]) {
-  pthread_t *threads_array;
-  int *thread_ids, i;
-  double start, end, delta;
+  pthread_t *array_of_threads; /* armazena um array com ponteiros para cada thread */
+  int *thread_ids; /* armazena o identificador de cada thread */
+  int i; /* índice do for */
+  double start, end, game_creating_time, thread_execution_time, free_memory_time, total = 0.0; /* variáveis de controle de tempo */
 
   GET_TIME(start);
 
   /* testa se a quantidade de argumentos passados é suficiente */
-  if (argc < 3) {
-    printf("Enter: <matrix dimension> <number o threads>\n");
+  if (argc < 4) {
+    printf("Entre com os dados: %s <número de threads> <quantidade de jogos> <tamanho dos jogos>\n", argv[0]);
     return 1;
   }
 
   /* converte os argumentos passados na chamada do programa */
-  matrix_dimension = atoi(argv[1]);
-  number_of_threads = atoi(argv[2]);
+  number_of_threads = atoi(argv[1]);
+  number_of_games = atoi(argv[2]);
+  game_size = atoi(argv[3]);
 
-  if (number_of_threads > matrix_dimension) number_of_threads = matrix_dimension;
+  if (number_of_threads > number_of_games) number_of_threads = number_of_games;
 
-  /* aloca as estruturas de dados que são usadas */
-  matrix1 = create_matrix();
-  matrix2 = create_matrix();
-  result = create_matrix();
+  /* aloca e preeche de maneira concorrente as estruturas de dados que são usadas */
+  create_games_concurrent();
 
-  /* fornece valores para as matrizes */
-  populate_matrix(matrix1);
-  populate_matrix(matrix2);
+  GET_TIME(end);
+  game_creating_time = end - start;
+  total += game_creating_time;
+
+  GET_TIME(start);
 
   /* aloca um array com todos os ponteiros para as threads criadas */
-  threads_array = (pthread_t *) malloc(sizeof(pthread_t) * number_of_threads);
-  if (threads_array == NULL) {
+  array_of_threads = (pthread_t *) malloc(sizeof(pthread_t) * number_of_threads);
+  if (array_of_threads == NULL) {
     printf("ERROR -- Malloc\n");
     return 2;
   }
@@ -79,7 +86,7 @@ int main(int argc, char const *argv[]) {
   for (i = 0; i < number_of_threads; i++) {
     thread_ids[i] = i;
 
-    if (pthread_create(threads_array + i, NULL, task, (void *) &thread_ids[i])) {
+    if (pthread_create(array_of_threads + i, NULL, game_process, (void *) &thread_ids[i])) {
       printf("ERROR -- pthread_create\n");
       return 2;
     }
@@ -87,52 +94,178 @@ int main(int argc, char const *argv[]) {
 
   /* espera as threads terminarem sua execução */
   for (i = 0; i < number_of_threads; i++) {
-    pthread_join(*(threads_array + i), NULL);
+    pthread_join(*(array_of_threads + i), NULL);
   }
 
-  /* imprime o resultado */
-  /* print_matrix(result); */
-
-  free(matrix1);
-  free(matrix2);
-  free(result);
-  free(threads_array);
+  /* imprime a situação final de cada jogo */
+  // printf("\n----- RESULTADO DOS JOGOS -----\n");
+  // for (i = 0; i < number_of_games; i++) {
+  //   if ((games+i)->game_result->player1_score == (games+i)->game_result->player2_score) {
+  //     printf("JOGO %d: EMPATE!\n", i);
+  //   } else {
+  //     printf("\nJOGO %d: Ganhador é o Player %d\n", i, (games+i)->winner);
+  //   }
+  // }
 
   GET_TIME(end);
-  delta = end - start;
-  printf("Total time: %lf\n", delta);
+  thread_execution_time = end - start;
+  total += thread_execution_time;
+
+  GET_TIME(start);
+
+  /* libera a memória que foi alocada */
+  free(games->rounds);
+  free(games->game_result);
+  free(games);
+  free(array_of_threads);
+  free(thread_ids);
+
+  GET_TIME(end);
+  free_memory_time = end - start;
+  total += free_memory_time;
+
+  /* imprime o tempo em cada etapa do código */
+  printf("\n----------- TEMPO DE EXECUÇÃO -----------\nCriação do jogo: %lf\n", game_creating_time);
+  printf("Tempo de execução das threads: %lf\n", thread_execution_time);
+  printf("Tempo de free na memória: %lf\n", free_memory_time);
+  printf("TEMPO TOTAL: %lf\n", total);
 
   return 0;
 }
 
-float *create_matrix() {
-  float *matrix;
-  matrix = (float *) malloc(sizeof(float) * matrix_dimension * matrix_dimension);
-  if (matrix == NULL) {
+void *game_process(void *arg) {
+  int thread_id = *((int *) arg); /* converte o argumento da thread */
+  int i, j; /* índices do for */
+  int number_of_terms, first_game, last_game; /* variáveis de controle para o for */
+  game_t *current_game; /* armazena o jogo que a thread está processando no momento */
+  round_t *current_round; /* armazena a rodada que a thread está processando no momento */
+
+  number_of_terms = number_of_games/number_of_threads; /* calcula a quantidade de jogos que a thread vai processar */
+
+  /* faz o balanceamento de carga, evitando que a última thread fique com muito mais elementos para processar */
+  if (thread_id < (number_of_games % number_of_threads)) {
+    number_of_terms++;
+  }
+
+  first_game = thread_id * number_of_terms; /* verifica a partir de qual jogo a thread vai começar a calcular */
+
+  /* verifica qual é o último jogo que a thread irá calcular */
+  if (thread_id == number_of_threads - 1) last_game = number_of_games;
+  else last_game = first_game + number_of_terms;
+
+  /* percorre todos os jogos pelos quais a thread está responsável */
+  for (i = first_game; i < last_game; i++) {
+    current_game = games + i;
+
+    /* percorre as partidas de cada jogo para identificar qual jogador ganhou */
+    for (j = 0; j < game_size; j++) {
+      current_round = current_game->rounds + j;
+
+      if (current_round->player1 > current_round->player2) {
+        current_game->game_result->player1_score += 1;
+
+      } else if (current_round->player2 > current_round->player1) {
+        current_game->game_result->player2_score += 1;
+      }
+    }
+
+    if (current_game->game_result->player1_score > current_game->game_result->player2_score) {
+      current_game->winner = 1;
+    } else if (current_game->game_result->player2_score > current_game->game_result->player1_score) {
+      current_game->winner = 2;
+    }
+  }
+
+  pthread_exit(NULL);
+}
+
+void *result_round_alloc(void *arg) {
+  int thread_id = *((int *) arg); /* converte o argumento da thread */
+  int i, j; /* índices do for */
+  int number_of_terms, first_game, last_game; /* variáveis de controle para o for */
+  game_t *current_game; /* armazena o jogo que a thread está processando no momento */
+  round_t *current_round; /* armazena a rodada que a thread está processando no momento */
+
+  number_of_terms = number_of_games/number_of_threads; /* calcula a quantidade de jogos que a thread vai processar */
+
+  /* faz o balanceamento de carga, evitando que a última thread fique com muito mais elementos para processar */
+  if (thread_id < (number_of_games % number_of_threads)) {
+    number_of_terms++;
+  }
+
+  first_game = thread_id * number_of_terms; /* verifica a partir de qual jogo a thread vai começar a calcular */
+
+  /* verifica qual é o último jogo que a thread irá calcular */
+  if (thread_id == number_of_threads - 1) last_game = number_of_games;
+  else last_game = first_game + number_of_terms;
+
+  /* percorre todos os jogos pelos quais a thread está responsável */
+  for (i = first_game; i < last_game; i++) {
+    current_game = games + i;
+
+    /* aloca espaço pros rounds e para o resultado do jogo */
+    current_game->rounds = (round_t *) malloc(sizeof(round_t) * game_size);
+    current_game->game_result = (result_t *) malloc(sizeof(result_t));
+
+    /* inicializa os resultados de cada jogador com zero */
+    current_game->game_result->player1_score = 0;
+    current_game->game_result->player2_score = 0;
+
+    /* percorre cada rodada e preeche quais foram as entradas que os jogadores forneceram */
+    for (j = 0; j < game_size; j++) {
+      current_round = current_game->rounds + j;
+
+      /* utilizamos uma entrada padrão para fazer os testes, altere aqui para mudar qual jogador deve ganhar */
+      current_round->player1 = 5;
+      current_round->player2 = 3;
+    }
+  }
+
+  pthread_exit(NULL);
+}
+
+void create_games_concurrent() {
+  pthread_t *array_of_threads; /* armazena um array com ponteiros para cada thread */
+  int *thread_ids; /* armazena o identificador de cada thread */
+  int i; /* índice do for */
+
+  /* aloca a estrutura de dados para os jogos */
+  games = (game_t *) malloc(sizeof(game_t) * number_of_games);
+  if (games == NULL) {
     printf("ERROR -- Malloc\n");
     exit(2);
   }
 
-  return matrix;
-}
+  /* fizemos o preenchimento do jogo de maneira concorrente pois era a parte que mais levava tempo no programa */
+  /* aloca um array com todos os ponteiros para as threads criadas */
+  array_of_threads = (pthread_t *) malloc(sizeof(pthread_t) * number_of_threads);
+  if (array_of_threads == NULL) {
+    printf("ERROR -- Malloc\n");
+    exit(2);
+  }
 
-void populate_matrix(float *matrix) {
-  int i, j;
+  /* aloca um array que contem os identificadores das threads */
+  thread_ids = (int *) malloc(sizeof(pthread_t) * number_of_threads);
+  if (thread_ids == NULL) {
+    printf("ERROR -- Malloc\n");
+    exit(2);
+  }
 
-  for (i = 0; i < matrix_dimension; i++) {
-    for (j = 0; j < matrix_dimension; j++) {
-      matrix[i * matrix_dimension + j] = 1;
+  /* cria as threads que irão executar a multiplicação */
+  for (i = 0; i < number_of_threads; i++) {
+    thread_ids[i] = i;
+
+    if (pthread_create(array_of_threads + i, NULL, result_round_alloc, (void *) &thread_ids[i])) {
+      printf("ERROR -- pthread_create\n");
+      exit(3);
     }
   }
-}
 
-void print_matrix(float *matrix) {
-  int i, j;
-  for (i = 0; i < matrix_dimension; i++) {
-    for (j = 0; j < matrix_dimension; j++) {
-      printf("%.1f ", result[i * matrix_dimension + j]);
-    }
-    puts("");
+  /* espera as threads terminarem sua execução */
+  for (i = 0; i < number_of_threads; i++) {
+    pthread_join(*(array_of_threads + i), NULL);
   }
-  puts("");
+
+  free(array_of_threads);
+  free(thread_ids);
 }
