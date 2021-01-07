@@ -13,22 +13,22 @@
 typedef struct {
   long int player1;
   long int player2;
-} round_t;
+} Round;
 
 /* struct para armazerar o resultado de cada jogo */
 typedef struct {
   long int player1_score;
   long int player2_score;
-} result_t;
+} Result;
 
 /* struct para armazenar cada jogo */
 typedef struct {
-  round_t *rounds;
-  result_t *game_result;
+  Round *rounds;
+  Result *game_result;
   int winner;
-} game_t;
+} Game;
 
-game_t *games; /* variável global para armazenar a estrutura de dados que controla todo jogo */
+Game *games; /* variável global para armazenar a estrutura de dados que controla todo jogo */
 
 int number_of_threads;
 long int number_of_games;
@@ -137,8 +137,8 @@ void *game_process(void *arg) {
   int thread_id = *((int *) arg); /* converte o argumento da thread */
   int i, j; /* índices do for */
   int number_of_terms, first_game, last_game; /* variáveis de controle para o for */
-  game_t *current_game; /* armazena o jogo que a thread está processando no momento */
-  round_t *current_round; /* armazena a rodada que a thread está processando no momento */
+  Game *current_game; /* armazena o jogo que a thread está processando no momento */
+  Round *current_round; /* armazena a rodada que a thread está processando no momento */
 
   number_of_terms = number_of_games/number_of_threads; /* calcula a quantidade de jogos que a thread vai processar */
 
@@ -183,8 +183,8 @@ void *result_round_alloc(void *arg) {
   int thread_id = *((int *) arg); /* converte o argumento da thread */
   int i, j; /* índices do for */
   int number_of_terms, first_game, last_game; /* variáveis de controle para o for */
-  game_t *current_game; /* armazena o jogo que a thread está processando no momento */
-  round_t *current_round; /* armazena a rodada que a thread está processando no momento */
+  Game *current_game; /* armazena o jogo que a thread está processando no momento */
+  Round *current_round; /* armazena a rodada que a thread está processando no momento */
 
   number_of_terms = number_of_games/number_of_threads; /* calcula a quantidade de jogos que a thread vai processar */
 
@@ -204,8 +204,8 @@ void *result_round_alloc(void *arg) {
     current_game = games + i;
 
     /* aloca espaço pros rounds e para o resultado do jogo */
-    current_game->rounds = (round_t *) malloc(sizeof(round_t) * game_size);
-    current_game->game_result = (result_t *) malloc(sizeof(result_t));
+    current_game->rounds = (Round *) malloc(sizeof(Round) * game_size);
+    current_game->game_result = (Result *) malloc(sizeof(Result));
 
     /* inicializa os resultados de cada jogador com zero */
     current_game->game_result->player1_score = 0;
@@ -230,7 +230,7 @@ void create_games_concurrent() {
   int i; /* índice do for */
 
   /* aloca a estrutura de dados para os jogos */
-  games = (game_t *) malloc(sizeof(game_t) * number_of_games);
+  games = (Game *) malloc(sizeof(Game) * number_of_games);
   if (games == NULL) {
     printf("ERROR -- Malloc\n");
     exit(2);
