@@ -82,7 +82,7 @@ int main(int argc, char const *argv[]) {
     return 2;
   }
 
-  /* cria as threads que irão executar a multiplicação */
+  /* cria as threads que irão executar o processamento do jogo */
   for (i = 0; i < number_of_threads; i++) {
     thread_ids[i] = i;
 
@@ -98,14 +98,14 @@ int main(int argc, char const *argv[]) {
   }
 
   /* imprime a situação final de cada jogo */
-  // printf("\n----- RESULTADO DOS JOGOS -----\n");
-  // for (i = 0; i < number_of_games; i++) {
-  //   if ((games+i)->game_result->player1_score == (games+i)->game_result->player2_score) {
-  //     printf("JOGO %d: EMPATE!\n", i);
-  //   } else {
-  //     printf("\nJOGO %d: Ganhador é o Player %d\n", i, (games+i)->winner);
-  //   }
-  // }
+  printf("\n----- RESULTADO DOS JOGOS -----\n");
+  for (i = 0; i < number_of_games; i++) {
+    if ((games+i)->game_result->player1_score == (games+i)->game_result->player2_score) {
+      printf("JOGO %d: EMPATE!\n", i);
+    } else {
+      printf("\nJOGO %d: Ganhador é o Player %d\n", i, (games+i)->winner);
+    }
+  }
 
   GET_TIME(end);
   thread_execution_time = end - start;
@@ -114,8 +114,10 @@ int main(int argc, char const *argv[]) {
   GET_TIME(start);
 
   /* libera a memória que foi alocada */
-  free(games->rounds);
-  free(games->game_result);
+  for (i = 0; i < number_of_games; i++) {
+    free((games+i)->game_result);
+    free((games+i)->rounds);
+  }
   free(games);
   free(array_of_threads);
   free(thread_ids);
@@ -251,7 +253,7 @@ void create_games_concurrent() {
     exit(2);
   }
 
-  /* cria as threads que irão executar a multiplicação */
+  /* cria as threads que irão alocar e preencher a estrutura de dados do jogo */
   for (i = 0; i < number_of_threads; i++) {
     thread_ids[i] = i;
 
