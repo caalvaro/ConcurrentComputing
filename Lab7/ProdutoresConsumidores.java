@@ -41,12 +41,13 @@ class Buffer {
   }
 
   //operacao de leitura sobre o recurso compartilhado
-  public synchronized int getElement(int index) {
+  public synchronized Integer getElement(int index) {
     return this.buffer[index];
   }
 
   //operacao de escrita sobre o recurso compartilhado
-  public synchronized int insertElement(int index, int value) {
+  public synchronized Integer insertElement(int index, int value) {
+    // a função só insere um elemento na posição se ela estiver vazia
     if (this.buffer[index] == null) {
       this.buffer[index] = value;
       this.bufferSize++;
@@ -56,9 +57,10 @@ class Buffer {
   }
 
   //operacao de escrita sobre o recurso compartilhado
-  public synchronized int removeElement(int index) {
-    int removedElement = 0;
+  public synchronized Integer removeElement(int index) {
+    Integer removedElement = null;
 
+    // se a posição estiver vazia, não remove o elemento e retorna nulo
     if (this.buffer[index] != null) {
       removedElement = this.buffer[index];
       this.buffer[index] = null;
@@ -104,7 +106,7 @@ class ProducerConsumer {
     } catch (InterruptedException e) { }
   }
 
-  // Entrada para escritores
+  // Produtor produz elementos
   public synchronized void produce(int id) {
     try {
       System.out.println("Produtor "+id+" quer produzir");
