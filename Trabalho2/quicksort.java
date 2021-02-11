@@ -1,5 +1,6 @@
 import java.util.LinkedList;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 // classe para encapsular o intervalo
 class Range {
@@ -155,43 +156,56 @@ class Worker extends Thread {
 // Classe principal
 class Main {
   // variáveis globais para personalizar a execução do programa
-  static final int NumberOfThreads = 4;
-  static final int ArraySize = 20;
+  static int NumberOfThreads;
+  static int ArraySize;
   static boolean debugMode;
 
   public static void main (String[] args) {
-    int i;
-    Monitor monitor = new Monitor();
-    Random random = new Random(15158);
-    int[] array = new int[ArraySize]; // array a ser ordenado
-    Worker[] workers = new Worker[NumberOfThreads]; // array de threads
-    boolean sortError = false;
-
-    // configura um modo com prints caso o usuário passe algum argumento para a main
-    if (args.length > 0) {
-      debugMode = true;
+    // verifica se a quantidade de argumentos passados é correta
+    if (args.length < 3) {
+      System.out.println("Erro: adicione os argumentos <número de threads> <tamanho do array> <modo debug (0 ou 1)>");
+      System.exit(1);
     }
 
+    // atribui o valor dos argumentos passados
+    Main.NumberOfThreads = Integer.parseInt(args[0]);
+    Main.ArraySize = Integer.parseInt(args[1]);
+    Main.debugMode = !args[2].equals("0");
+
+    long startTime, endTime;// variáveis de medição de tempo
+    int i; // índice do for
+    Monitor monitor = new Monitor(); // objeto para gerenciar sincronização das threads
+    Random random = new Random(15158); // objeto para gerar aleatórios
+    Worker[] workers = new Worker[NumberOfThreads]; // array de threads
+    boolean sortError = false; // armazena se houve algum erro de ordenação
+    int[] array = new int[ArraySize]; // array a ser ordenado
+
     // cria um array com elementos aleatórios de 1 a 100
-    for (i = 0; i < ArraySize; i++) {
+    for (i = 0; i < Main.ArraySize; i++) {
        array[i] = random.nextInt() % 100;
     }
 
     // imprime o array criado
-    System.out.print("\nArray inicial: ");
-    for (i = 0; i < ArraySize; i++) {
-      System.out.print(array[i]+" ");
+    if (Main.debugMode) {
+      System.out.print("\nArray inicial: ");
+      for (i = 0; i < Main.ArraySize; i++) {
+        System.out.print(array[i]+" ");
+      }
+      System.out.println();
     }
-    System.out.println();
 
-    for (i = 0; i < NumberOfThreads; i++) {
+    System.out.print("\nNumero de Threads: "+Main.NumberOfThreads+"\nTamanho do array: "+Main.ArraySize);
+
+    startTime = System.nanoTime();
+
+    for (i = 0; i < Main.NumberOfThreads; i++) {
       workers[i] = new Worker(monitor, array);
       workers[i].start();
     }
 
     // aguarda a finalização das threads
     try {
-      for (i = 0; i < NumberOfThreads; i++) {
+      for (i = 0; i < Main.NumberOfThreads; i++) {
         long id = workers[i].getId();
         workers[i].join();
 
@@ -201,15 +215,20 @@ class Main {
       }
     } catch (Exception e) {e.printStackTrace();}
 
+    endTime = System.nanoTime();
+    System.out.print("\n\n- Tempo de ordenação: "+((endTime - startTime)/1000000000.0)+" segundos\n");
+
     // imprime o array ordenado
-    System.out.print("\nArray ordenado: ");
-    for (i = 0; i < ArraySize; i++) {
-      System.out.print(array[i]+" ");
+    if (Main.debugMode) {
+      System.out.print("\nArray ordenado: ");
+      for (i = 0; i < Main.ArraySize; i++) {
+        System.out.print(array[i]+" ");
+      }
+      System.out.println();
     }
-    System.out.println();
 
     // verifica se houve algum erro na ordenação
-    for (i = 1; i < ArraySize; i++) {
+    for (i = 1; i < Main.ArraySize; i++) {
       if (array[i-1] > array[i]) {
         sortError = true;
         System.out.println(">>> Ordenação com ERRO!!! em "+i);
