@@ -58,15 +58,15 @@ class Monitor {
       // a thread se bloquea quando a fila está vazia
       // a não ser que essa thread seja a última ainda executando, nesse caso ela não se bloqueia para evitar deadlock
       while (this.queue.size() == 0 && this.finishedThreads < Main.NumberOfThreads - 1) {
-        // System.out.println("Thread "+Thread.currentThread().getId()+" se bloqueou");
+        if (Main.debugMode) {
+          System.out.println("Thread "+Thread.currentThread().getId()+" se bloqueou");
+        }
         this.wait();
       }
     } catch (Exception e) { e.printStackTrace(); }
 
-    // this.printQueue();
-
     // se a fila está vazia e a thread não se bloqueou
-    // retorna um intervalo qualquer que seja consição de parada do algoritmo
+    // retorna um intervalo qualquer que seja condição de parada do algoritmo
     if (this.queue.size() == 0) {
       return new Range(-1,-1);
     }
@@ -82,8 +82,10 @@ class Monitor {
     // notifica as threads que estão esperando que já tem novos intervalos para serem processados
     this.notifyAll();
 
-    // this.printQueue();
-    // System.out.println("Thread "+Thread.currentThread().getId()+" notificou todas");
+    if (Main.debugMode) {
+      this.printQueue();
+      System.out.println("Thread "+Thread.currentThread().getId()+" notificou todas");
+    }
   }
 
   // função para fazer registrar que uma thread terminou a execução
@@ -142,7 +144,9 @@ class Worker extends Thread {
 
   // Método executado pela thread
   public void run() {
-    // System.out.println("Thread "+this.getId()+" começou a executar");
+    if (Main.debugMode) {
+      System.out.println("Thread "+this.getId()+" começou a executar");
+    }
     monitor.quicksort(array);
   }
 }
@@ -153,20 +157,28 @@ class Main {
   // variáveis globais para personalizar a execução do programa
   static final int NumberOfThreads = 4;
   static final int ArraySize = 20;
+  static boolean debugMode;
 
   public static void main (String[] args) {
     int i;
     Monitor monitor = new Monitor();
-    Random rd = new Random(1515);
+    Random random = new Random(15158);
     int[] array = new int[ArraySize]; // array a ser ordenado
     Worker[] workers = new Worker[NumberOfThreads]; // array de threads
+    boolean sortError = false;
 
-    // cria um array com elementos aleatórios
+    // configura um modo com prints caso o usuário passe algum argumento para a main
+    if (args.length > 0) {
+      debugMode = true;
+    }
+
+    // cria um array com elementos aleatórios de 1 a 100
     for (i = 0; i < ArraySize; i++) {
-       array[i] = rd.nextInt() % 100;
+       array[i] = random.nextInt() % 100;
     }
 
     // imprime o array criado
+    System.out.print("\nArray inicial: ");
     for (i = 0; i < ArraySize; i++) {
       System.out.print(array[i]+" ");
     }
@@ -182,11 +194,15 @@ class Main {
       for (i = 0; i < NumberOfThreads; i++) {
         long id = workers[i].getId();
         workers[i].join();
-        // System.out.println("Thread "+id+" finalizou");
+
+        if (Main.debugMode) {
+          System.out.println("\nThread "+id+" finalizou");
+        }
       }
     } catch (Exception e) {e.printStackTrace();}
 
     // imprime o array ordenado
+    System.out.print("\nArray ordenado: ");
     for (i = 0; i < ArraySize; i++) {
       System.out.print(array[i]+" ");
     }
@@ -195,8 +211,13 @@ class Main {
     // verifica se houve algum erro na ordenação
     for (i = 1; i < ArraySize; i++) {
       if (array[i-1] > array[i]) {
+        sortError = true;
         System.out.println(">>> Ordenação com ERRO!!! em "+i);
       }
+    }
+
+    if (!sortError) {
+      System.out.println("\nArray corretamente ordenado!");
     }
   }
 }
