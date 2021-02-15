@@ -61,14 +61,14 @@ void *writer(void *arg) {
 
     if (e == 1) sem_wait(&leit);
 
-    //sem_post(&em_e);
+    //sem_post(&em_e); // podemos remover
 
-    //sem_wait(&escr); // escrita sincronizada
+    //sem_wait(&escr); // podemos remover
     // faz escrita
     printf("Escritora %d escreveu\n", *id);
-    //sem_post(&escr); // fim da escrita
+    //sem_post(&escr); // podemos remover
 
-    //sem_wait(&em_e);
+    //sem_wait(&em_e); // podemos remover
 
     e--;
 
