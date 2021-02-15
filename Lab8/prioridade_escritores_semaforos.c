@@ -14,7 +14,6 @@
 int number_of_readers, number_of_writers; // recebem na entrada do programa a quantidade de threads
 
 //variaveis para sincronizacao
-pthread_mutex_t mutex_escritores, mutex_leitores;
 sem_t em_e, em_l, escr, leit;
 int e = 0, l = 0;
 
@@ -22,9 +21,8 @@ int e = 0, l = 0;
 void *reader(void *arg) {
   int *id = (int *) arg;
   while(1) {
-    //sem_wait(&leit);
-    //sem_wait(&em_l);
-    pthread_mutex_lock(&mutex_leitores); // exlusão mútua para acesso a variável global l
+    //sem_wait(&leit); // redundante aqui
+    sem_wait(&em_l); // exlusão mútua para acesso a variável global l
     printf("Leitora %d quer ler\n", *id);
 
     l++;
@@ -32,23 +30,20 @@ void *reader(void *arg) {
     if (l == 1) // se é a primeira leitora
       sem_wait(&escr); // bloqueia a entrada de escritores
 
-    pthread_mutex_unlock(&mutex_leitores); // fim da seção crítica
-    //sem_post(&em_l);
-    //sem_post(&leit);
+    sem_post(&em_l);
+    //sem_post(&leit); // redundante
 
     // faz leitura
     printf("Leitora %d leu\n", *id);
 
-    // sem_wait(&em_l);
-    pthread_mutex_lock(&mutex_leitores); // exlusão mútua para acesso a variável global l
+    sem_wait(&em_l); // exlusão mútua para acesso a variável global l
 
     l--;
 
     if (l == 0) // se é a última leitora
       sem_post(&escr); // permite a entrada de escritores
 
-    pthread_mutex_unlock(&mutex_leitores); // fim da seção crítica
-    // sem_post(&em_l);
+    sem_post(&em_l);
     sleep(1);
   }
   free(arg);
@@ -59,8 +54,7 @@ void *reader(void *arg) {
 void *writer(void *arg) {
   int *id = (int *) arg;
   while(1) {
-    //sem_wait(&em_e);
-    pthread_mutex_lock(&mutex_escritores); // exlusão mútua para acesso a variável global e
+    sem_wait(&em_e); // exlusão mútua para acesso a variável global e
     printf("Escritora %d quer escrever\n", *id);
 
     e++;
@@ -80,7 +74,7 @@ void *writer(void *arg) {
 
     if (e == 0) sem_post(&leit);
 
-    pthread_mutex_unlock(&mutex_escritores); // fim da seção crítica
+    sem_post(&em_e); // fim da seção crítica
     sleep(1);
   }
   free(arg);
@@ -107,10 +101,8 @@ int main(int argc, char const *argv[]) {
   thread_ids = (int *) malloc(sizeof(pthread_t) * (number_of_readers + number_of_writers));
 
   //inicializa as variaveis de sincronizacao
-  // sem_init(&em_e, 0, 1);
-  // sem_init(&em_l, 0, 1);
-  pthread_mutex_init(&mutex_leitores, NULL);
-  pthread_mutex_init(&mutex_escritores, NULL);
+  sem_init(&em_e, 0, 1);
+  sem_init(&em_l, 0, 1);
   sem_init(&escr, 0, 1);
   sem_init(&leit, 0, 1);
 
