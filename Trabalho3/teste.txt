@@ -1,0 +1,57 @@
+-----------------
+Arquivo 1:
+comando para criar: ./create_binary_file 1000 arquivo_kb
+11080 números
+Tamanho: 88,6 kB
+
+
+------ RESULTADO DO PROCESSAMENTO -------
+Maior sequência: posição inicial 31, tamanho 50, valor 3
+Sequências de tamanho 3: 21
+Sequências 012345: 1000
+
+----------- TEMPO DE EXECUÇÃO -----------
+Inicialização das threads: 0.000043
+Tempo de execução das threads: 0.000437
+Tempo de free na memória: 0.000000
+TEMPO TOTAL: 0.000481
+
+
+
+-----------------
+Arquivo 2:
+comando para criar: ./create_binary_file 1000000 arquivo_mb
+11000080 números
+Tamanho: 88,0 MB
+
+------ RESULTADO DO PROCESSAMENTO -------
+Maior sequência: posição inicial 31, tamanho 50, valor 3
+Sequências de tamanho 3: 21
+Sequências 012345: 1000000
+
+----------- TEMPO DE EXECUÇÃO -----------
+Inicialização das threads: 0.000042
+Tempo de execução das threads: 0.086944
+Tempo de free na memória: 0.000136
+TEMPO TOTAL: 0.087123
+
+
+
+
+-----------------
+Arquivo 3:
+comando para criar: ./create_binary_file 100000000 arquivo_gb
+1100000080 números
+Tamanho: 8,8 GB
+
+
+------ RESULTADO DO PROCESSAMENTO -------
+Maior sequência: posição inicial 31, tamanho 50, valor 3
+Sequências de tamanho 3: 21
+Sequências 012345: 100000000
+
+----------- TEMPO DE EXECUÇÃO -----------
+Inicialização das threads: 0.000040
+Tempo de execução das threads: 29.293179
+Tempo de free na memória: 0.000162
+TEMPO TOTAL: 29.293381
