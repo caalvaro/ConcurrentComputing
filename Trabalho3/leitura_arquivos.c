@@ -340,10 +340,15 @@ void *sequence_012345_occurrences(void *arg) {
 }
 
 void *file_reader(void *arg) {
-  FILE *file = fopen(file_name, "r"); // ponteiro para o arquivo
   long long int file_size; // tamanho do arquivo
   long long int i, j; // variáveis do for
   long long int read_numbers; // quantidade de números do bloco que foram de fatos lidos pela função fread
+  FILE *file = fopen(file_name, "r"); // ponteiro para o arquivo
+
+  if (file == NULL) {
+    printf("Não foi possível abrir o arquivo.\n");
+    exit(3);
+  }
 
   if (DEBUG_MODE) {
     printf("Thread leitora começou\n");
